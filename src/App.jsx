@@ -1,26 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-
-function calculateWinner(squares) {
-  const lines = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
-  ];
-  for (let [a,b,c] of lines) {
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
-
-function Square({ value, onClick }){
-  return (
-    <button className="square" onClick={onClick}>
-      {value}
-    </button>
-  );
-}
+import Board from './components/Board'
+import Toolbar from './components/Toolbar'
+import { calculateWinner, findBestMove } from './game'
+import { playClickSound, playWinSound, playDrawSound } from './audio'
 
 export default function App(){
   const [squares, setSquares] = useState(Array(9).fill(null));
@@ -46,69 +28,7 @@ export default function App(){
     }
   }, [squares, xIsNext, mode, aiPlays]);
 
-  // Audio (WebAudio) — create on demand
-  const audioRef = useRef(null);
-  function getAudioCtx(){
-    if (!audioRef.current){
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return null;
-      audioRef.current = new AudioCtx();
-    }
-    return audioRef.current;
-  }
-
-  function playClickSound(){
-    const ctx = getAudioCtx();
-    if (!ctx) return;
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.value = 880;
-    g.gain.value = 0.0001;
-    o.connect(g); g.connect(ctx.destination);
-    const now = ctx.currentTime;
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-    o.start(now);
-    o.stop(now + 0.18);
-  }
-
-  function playWinSound(){
-    const ctx = getAudioCtx();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const freqs = [660, 880, 1100];
-    freqs.forEach((f, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.value = f;
-      o.connect(g); g.connect(ctx.destination);
-      const t = now + i * 0.12;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
-      o.start(t);
-      o.stop(t + 0.3);
-    });
-  }
-
-  function playDrawSound(){
-    const ctx = getAudioCtx();
-    if (!ctx) return;
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'triangle';
-    o.frequency.value = 320;
-    o.connect(g); g.connect(ctx.destination);
-    const now = ctx.currentTime;
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
-    o.start(now);
-    o.stop(now + 0.24);
-  }
+  // audio functions are imported from ./audio
 
   function makeMove(i){
     setSquares(prev => {
@@ -172,31 +92,10 @@ export default function App(){
 
       <main className="game-card">
         <div className="game">
-      <div className="toolbar">
-        <div className="mode">
-          <div className="label">Mode</div>
-          <label><input type="radio" name="mode" value="HUMAN" checked={mode==='HUMAN'} onChange={() => setMode('HUMAN')} /> Human vs Human</label>
-          <label><input type="radio" name="mode" value="AI" checked={mode==='AI'} onChange={() => setMode('AI')} /> Human vs AI</label>
-        </div>
-        <div className="aiselect">
-          <div className="label">AI plays</div>
-          <label><input type="radio" name="ai" value="X" checked={aiPlays==='X'} onChange={() => setAiPlays('X')} /> X</label>
-          <label><input type="radio" name="ai" value="O" checked={aiPlays==='O'} onChange={() => setAiPlays('O')} /> O</label>
-        </div>
-
-        <div className="scoreboard" aria-live="polite">
-          <div className="scorebox">X: {scoreX}</div>
-          <div className="scorebox">O: {scoreO}</div>
-          <div className="scorebox">Draws: {scoreDraws}</div>
-        </div>
-      </div>
+      <Toolbar mode={mode} setMode={setMode} aiPlays={aiPlays} setAiPlays={setAiPlays} scoreX={scoreX} scoreO={scoreO} scoreDraws={scoreDraws} />
 
       <div className="status">{winner ? <span className="winner">{status}</span> : status}</div>
-      <div className="board">
-        {squares.map((s,i) => (
-          <Square key={i} value={s} onClick={() => handleClick(i)} />
-        ))}
-      </div>
+      <Board squares={squares} onSquareClick={handleClick} />
       <div className="controls">
         <button className="reset" onClick={() => reset(true)}>Reset (X starts)</button>
         <button className="reset" style={{marginLeft:8}} onClick={() => reset(false)}>Reset (O starts)</button>
@@ -207,40 +106,4 @@ export default function App(){
   );
 }
 
-// Minimax AI
-function findBestMove(squares, aiPlayer){
-  const human = aiPlayer === 'X' ? 'O' : 'X';
-  function availableMoves(b){
-    return b.map((v,i) => v ? null : i).filter(v => v !== null);
-  }
 
-  function minimax(board, player){
-    const winner = calculateWinner(board);
-    if (winner === aiPlayer) return {score: 10};
-    if (winner === human) return {score: -10};
-    if (board.every(Boolean)) return {score: 0};
-
-    const moves = [];
-    for (const i of availableMoves(board)){
-      const newBoard = board.slice();
-      newBoard[i] = player;
-      const result = minimax(newBoard, player === 'X' ? 'O' : 'X');
-      moves.push({index: i, score: result.score});
-    }
-
-    if (player === aiPlayer){
-      // maximize
-      let best = moves[0];
-      for (const m of moves) if (m.score > best.score) best = m;
-      return best;
-    } else {
-      // minimize
-      let best = moves[0];
-      for (const m of moves) if (m.score < best.score) best = m;
-      return best;
-    }
-  }
-
-  const move = minimax(squares, aiPlayer);
-  return move && move.index != null ? move.index : null;
-}

@@ -28,6 +28,12 @@ export default function App(){
   const [mode, setMode] = useState('HUMAN'); // 'HUMAN' or 'AI'
   const [aiPlays, setAiPlays] = useState('O'); // AI plays 'O' or 'X'
 
+  // Score tracking (in-memory)
+  const [scoreX, setScoreX] = useState(0);
+  const [scoreO, setScoreO] = useState(0);
+  const [scoreDraws, setScoreDraws] = useState(0);
+  const lastOutcomeRef = useRef(null);
+
   useEffect(() => {
     const winner = calculateWinner(squares);
     const aiTurn = mode === 'AI' && !winner && ((aiPlays === 'X' && xIsNext) || (aiPlays === 'O' && !xIsNext));
@@ -126,6 +132,7 @@ export default function App(){
   function reset(startX = true){
     setSquares(Array(9).fill(null));
     setXIsNext(startX);
+    lastOutcomeRef.current = null;
   }
 
   const winner = calculateWinner(squares);
@@ -139,6 +146,18 @@ export default function App(){
   useEffect(() => {
     if (winner) playWinSound();
     else if (isDraw) playDrawSound();
+  }, [winner, isDraw]);
+
+  // increment in-memory scores once per finished game
+  useEffect(() => {
+    if (winner && lastOutcomeRef.current !== winner){
+      if (winner === 'X') setScoreX(s => s + 1);
+      if (winner === 'O') setScoreO(s => s + 1);
+      lastOutcomeRef.current = winner;
+    } else if (isDraw && lastOutcomeRef.current !== 'DRAW'){
+      setScoreDraws(s => s + 1);
+      lastOutcomeRef.current = 'DRAW';
+    }
   }, [winner, isDraw]);
 
   return (
@@ -163,6 +182,12 @@ export default function App(){
           <div className="label">AI plays</div>
           <label><input type="radio" name="ai" value="X" checked={aiPlays==='X'} onChange={() => setAiPlays('X')} /> X</label>
           <label><input type="radio" name="ai" value="O" checked={aiPlays==='O'} onChange={() => setAiPlays('O')} /> O</label>
+        </div>
+
+        <div className="scoreboard" aria-live="polite">
+          <div className="scorebox">X: {scoreX}</div>
+          <div className="scorebox">O: {scoreO}</div>
+          <div className="scorebox">Draws: {scoreDraws}</div>
         </div>
       </div>
 

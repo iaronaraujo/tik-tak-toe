@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 function calculateWinner(squares) {
   const lines = [
@@ -40,6 +40,70 @@ export default function App(){
     }
   }, [squares, xIsNext, mode, aiPlays]);
 
+  // Audio (WebAudio) — create on demand
+  const audioRef = useRef(null);
+  function getAudioCtx(){
+    if (!audioRef.current){
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      audioRef.current = new AudioCtx();
+    }
+    return audioRef.current;
+  }
+
+  function playClickSound(){
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(ctx.destination);
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+    o.start(now);
+    o.stop(now + 0.18);
+  }
+
+  function playWinSound(){
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const freqs = [660, 880, 1100];
+    freqs.forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = now + i * 0.12;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      o.start(t);
+      o.stop(t + 0.3);
+    });
+  }
+
+  function playDrawSound(){
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 320;
+    o.connect(g); g.connect(ctx.destination);
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    o.start(now);
+    o.stop(now + 0.24);
+  }
+
   function makeMove(i){
     setSquares(prev => {
       const newSquares = prev.slice();
@@ -47,6 +111,8 @@ export default function App(){
       return newSquares;
     });
     setXIsNext(prev => !prev);
+    // play click sound for both human and AI moves
+    try{ playClickSound(); }catch(e){}
   }
 
   function handleClick(i){
@@ -69,8 +135,24 @@ export default function App(){
   else if (isDraw) status = 'Draw';
   else status = `Next player: ${xIsNext ? 'X' : 'O'}`;
 
+  // play sounds for end states
+  useEffect(() => {
+    if (winner) playWinSound();
+    else if (isDraw) playDrawSound();
+  }, [winner, isDraw]);
+
   return (
-    <div className="game">
+    <div className="app-root">
+      <header className="rbx-header">
+        <div className="rbx-inner">
+          <div className="rbx-logo">R</div>
+          <div className="rbx-title">Tik-Tac-Toe</div>
+          <div className="rbx-spacer" />
+        </div>
+      </header>
+
+      <main className="game-card">
+        <div className="game">
       <div className="toolbar">
         <div className="mode">
           <div className="label">Mode</div>
@@ -94,6 +176,8 @@ export default function App(){
         <button className="reset" onClick={() => reset(true)}>Reset (X starts)</button>
         <button className="reset" style={{marginLeft:8}} onClick={() => reset(false)}>Reset (O starts)</button>
       </div>
+        </div>
+      </main>
     </div>
   );
 }

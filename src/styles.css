@@ -1,14 +1,70 @@
-body { font-family: Arial, Helvetica, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; background:#f5f7fb }
-.game { display:flex; flex-direction:column; align-items:center }
-.status { margin-bottom:12px; font-size:18px }
-.board { display:grid; grid-template-columns: repeat(3,100px); gap:8px }
-.square { width:100px; height:100px; font-size:40px; cursor:pointer; background:white; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; }
-.square:focus { outline:3px solid #9be }
-.controls { margin-top:12px }
-button.reset { padding:8px 12px; font-size:14px; cursor:pointer }
-.winner { color: #d6336c; font-weight:700 }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-.toolbar { display:flex; gap:20px; align-items:center; margin-bottom:12px; padding:8px 12px; background: #fff; border-radius:8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06) }
-.toolbar .label { font-size:12px; font-weight:600; margin-bottom:4px }
-.toolbar .mode, .toolbar .aiselect { display:flex; flex-direction:column; gap:6px }
-.toolbar label { font-size:14px; cursor:pointer }
+:root{
+	--rbx-red: #e2231a;
+	--rbx-dark: #0f1720;
+	--card-bg: #ffffff;
+	--muted: #6b7280;
+	--glass: rgba(255,255,255,0.6);
+}
+
+html,body,#root{ height:100%; }
+body{
+	margin:0;
+	font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	background: linear-gradient(180deg,#f3f6fb 0%, #eef3fb 40%, #e6eefb 100%);
+	-webkit-font-smoothing:antialiased;
+}
+
+.rbx-header{
+	background: var(--rbx-dark);
+	color: white;
+	padding: 12px 0;
+	box-shadow: 0 6px 24px rgba(15,23,32,0.28);
+}
+.rbx-inner{ display:flex; align-items:center; gap:12px; width:1100px; max-width:92%; margin:0 auto; }
+.rbx-logo{ width:40px; height:40px; border-radius:10px; background:var(--rbx-red); color:white; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; box-shadow: 0 6px 20px rgba(226,35,26,0.18); transform: translateY(0); }
+.rbx-title{ font-weight:800; font-size:16px; letter-spacing:0.2px }
+.rbx-spacer{ flex:1 }
+
+.game-card{ width:1100px; max-width:92%; margin:28px auto; display:flex; justify-content:center }
+.game{ background: var(--card-bg); border-radius:14px; padding:26px; box-shadow: 0 16px 40px rgba(16,24,40,0.12); width:460px; display:flex; flex-direction:column; align-items:center; opacity:0; transform: translateY(10px); animation: card-pop .36s cubic-bezier(.2,.8,.2,1) forwards }
+
+.status{ margin-bottom:18px; font-size:16px; color:var(--rbx-dark); font-weight:700 }
+.board{ display:grid; grid-template-columns: repeat(3,120px); gap:14px; background: linear-gradient(180deg, rgba(4,8,15,0.02), rgba(4,8,15,0.03)); padding:16px; border-radius:14px }
+.square{ width:120px; height:120px; font-size:48px; cursor:pointer; background:linear-gradient(180deg,#ffffff 0%, #f3f5fb 100%); border-radius:12px; border:1px solid rgba(16,24,40,0.10); display:flex; align-items:center; justify-content:center; box-shadow: 0 10px 22px rgba(16,24,40,0.08); transition: transform .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s ease, background .12s ease }
+.square:hover{ transform: translateY(-6px); box-shadow: 0 22px 56px rgba(16,24,40,0.14) }
+.square:active{ transform: translateY(-2px) }
+.square:not(:empty){ animation: mark-pop .18s cubic-bezier(.2,.8,.2,1) }
+
+.controls{ margin-top:18px; display:flex; gap:10px }
+button.reset{ padding:10px 14px; font-size:14px; cursor:pointer; border-radius:10px; border:none; background:var(--rbx-red); color:white; box-shadow: 0 10px 28px rgba(226,35,26,0.18); transition: transform .12s ease }
+.reset:hover{ transform: translateY(-3px) }
+
+.winner{ color:var(--rbx-red); font-weight:900; text-shadow: 0 2px 8px rgba(226,35,26,0.12); animation: winner-pulse 1.2s ease-in-out infinite }
+
+.toolbar{ display:flex; gap:20px; align-items:center; margin-bottom:12px; padding:10px 12px; background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.5)); border-radius:10px; box-shadow: 0 6px 18px rgba(16,24,40,0.04) }
+.toolbar .label{ font-size:12px; font-weight:700; margin-bottom:2px; color:var(--muted) }
+.toolbar .mode, .toolbar .aiselect{ display:flex; flex-direction:column; gap:6px }
+.toolbar label{ font-size:14px; cursor:pointer; color:var(--rbx-dark) }
+
+/* subtle animations */
+@keyframes card-pop{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
+@keyframes mark-pop{ 0%{ transform: scale(.88) } 60%{ transform: scale(1.06) } 100%{ transform:none } }
+@keyframes winner-pulse{ 0%{ transform:scale(1); filter:brightness(1) } 50%{ transform:scale(1.02); filter:brightness(1.02) } 100%{ transform:scale(1); filter:brightness(1) } }
+@keyframes logo-bounce{ 0%{ transform: translateY(0) } 50%{ transform: translateY(-4px) } 100%{ transform: translateY(0) } }
+
+.rbx-logo{ animation: logo-bounce 3.4s ease-in-out infinite; }
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+	.game, .square:not(:empty), .rbx-logo, .winner { animation: none !important; transition: none !important }
+}
+
+/* small screens */
+@media (max-width:520px){
+	.board{ grid-template-columns: repeat(3,92px); gap:8px }
+	.square{ width:92px; height:92px; font-size:34px }
+	.game{ width:96%; padding:16px }
+	.rbx-inner{ max-width:96% }
+}

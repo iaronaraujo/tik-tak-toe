@@ -126,7 +126,7 @@ const Header = forwardRef(function Header(_, ref){
         <div className="rbx-spacer" />
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           {!user && clientId ? (
-            <div id="google-signin-button" />
+            <div id="google-signin-button" data-testid="google-container" />
           ) : !clientId ? (
             <div style={{fontSize:12,color:'#888'}}>Set VITE_GOOGLE_CLIENT_ID to enable Google SSO</div>
           ) : (

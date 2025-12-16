@@ -14,6 +14,7 @@ export default function Toolbar({ mode, setMode, aiPlays, setAiPlays, scoreX, sc
         <label><input type="radio" name="ai" value="X" checked={aiPlays==='X'} onChange={() => setAiPlays('X')} /> X</label>
         <label><input type="radio" name="ai" value="O" checked={aiPlays==='O'} onChange={() => setAiPlays('O')} /> O</label>
       </div>
+
       <Scoreboard x={scoreX} o={scoreO} draws={scoreDraws} />
     </div>
   )
